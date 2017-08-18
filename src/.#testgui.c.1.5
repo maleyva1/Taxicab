@@ -1,0 +1,269 @@
+#include <gtk/gtk.h>
+#include <glib.h>
+#include <stdio.h>
+#include <stdlib.h>
+/* This is Huan Chen's Config parsing file */
+#include "config.h"
+
+char *pickup;
+char *destination;
+
+/* Take config file and store data into local Map struct */
+Map *localMap = newMap();
+
+if(loadMap("NewIrvine.map", localMap) != 0)
+{
+    perror("Error loading file!\n");
+    exit(10);
+}
+
+
+
+
+static void enter_callback( GtkWidget *widget,
+                            GtkWidget *entry )
+{
+  	const gchar *entry_text;
+  	entry_text = gtk_entry_get_text (GTK_ENTRY (entry));
+  	printf ("Entry contents: %s\n", entry_text);
+}
+
+static gboolean on_match_select(GtkEntryCompletion *widget, GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data){  
+    GValue value = {0, };
+    gtk_tree_model_get_value(model, iter, 0, &value);/*The 0 is for the column value/words displayed*/
+    fprintf(stdout, "You have selected %s\n", g_value_get_string(&value));
+    g_value_unset(&value);
+    return FALSE;
+}
+	
+/*add debug flags*/
+int main(int argc,char *argv[])
+{
+    gtk_init(&argc,&argv);
+    GtkWidget *window;
+    GtkWidget *table;
+    GtkWidget *check;
+    GtkWidget *button;
+    GtkWidget *entry;
+	GtkWidget *label;
+	GtkEntryCompletion *completion;
+	GtkListStore *listStore = gtk_list_store_new(1,G_TYPE_STRING);
+	GtkTreeIter iter;
+	const char *name[] = {"a","ab","ac","ad","ae"};
+	int size = sizeof(name)/sizeof(const char *);
+    int i;
+
+    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(window),"Client Interface");
+
+    table = gtk_table_new(26,26,TRUE);
+    gtk_container_add(GTK_CONTAINER(window),table);
+    g_signal_connect(window,"destroy",G_CALLBACK(gtk_main_quit),NULL);
+    gtk_widget_set_size_request (GTK_WIDGET (window), 500, 500);
+
+	label = gtk_label_new("Starting location");
+	gtk_table_attach_defaults(GTK_TABLE(table),label,0,5,2,3);
+	gtk_widget_show(label);
+	
+	label = gtk_label_new("Ending location");
+    gtk_table_attach_defaults(GTK_TABLE(table),label,7,13,2,3);
+    gtk_widget_show(label);
+
+	label = gtk_label_new("x coordinate");
+    gtk_table_attach_defaults(GTK_TABLE(table),label,0,5,4,5);
+    gtk_widget_show(label);
+
+    label = gtk_label_new("x coordinate");
+    gtk_table_attach_defaults(GTK_TABLE(table),label,7,13,4,5);
+    gtk_widget_show(label);
+
+	label = gtk_label_new("y coordinate");
+    gtk_table_attach_defaults(GTK_TABLE(table),label,0,5,6,7);
+    gtk_widget_show(label);
+
+    label = gtk_label_new("y coordinate");
+    gtk_table_attach_defaults(GTK_TABLE(table),label,7,13,6,7);
+    gtk_widget_show(label);
+
+
+    check = gtk_check_button_new_with_label("Single");
+    gtk_table_attach_defaults(GTK_TABLE(table),check,0,7,0,2);
+    gtk_widget_show(check);
+
+    check = gtk_check_button_new_with_label("Premium");
+    gtk_table_attach_defaults(GTK_TABLE(table),check,7,13,0,2);
+    gtk_widget_show(check);
+
+    /* This is the entry for what? */
+    entry = gtk_entry_new();
+	gtk_entry_set_max_length(GTK_ENTRY(entry),50);
+	g_signal_connect(entry,"activate",G_CALLBACK(enter_callback),entry);
+	
+	gtk_table_attach_defaults(GTK_TABLE(table),entry,0,7,5,6);	
+	completion = gtk_entry_completion_new();
+	gtk_entry_completion_set_text_column(completion,0);
+	gtk_entry_set_completion(GTK_ENTRY(entry),completion);
+	g_signal_connect(G_OBJECT(completion),"match-selected",G_CALLBACK(on_match_select),NULL);
+	for(i=0;i<size;i++)
+	{
+		gtk_list_store_append(listStore, &iter);
+		gtk_list_store_set(listStore,&iter, 0, name[i],-1);
+	}
+	gtk_entry_completion_set_model(completion,GTK_TREE_MODEL(listStore));
+	gtk_widget_show(entry);
+
+    /* What is this entry for? */
+	entry = gtk_entry_new();
+    gtk_entry_set_max_length(GTK_ENTRY(entry),50);
+    g_signal_connect(entry,"activate",G_CALLBACK(enter_callback),entry);
+    gtk_table_attach_defaults(GTK_TABLE(table),entry,7,13,5,6);
+	completion = gtk_entry_completion_new();
+    gtk_entry_completion_set_text_column(completion,0);
+    gtk_entry_set_completion(GTK_ENTRY(entry),completion);
+    g_signal_connect(G_OBJECT(completion),"match-selected",G_CALLBACK(on_match_select),NULL);
+    for(i=0;i<size;i++)
+    {
+            gtk_list_store_append(listStore, &iter);
+            gtk_list_store_set(listStore,&iter, 0, name[i],-1);
+    }
+    gtk_entry_completion_set_model(completion,GTK_TREE_MODEL(listStore));
+    gtk_widget_show(entry);
+
+	entry = gtk_entry_new();
+    gtk_entry_set_max_length(GTK_ENTRY(entry),50);
+    g_signal_connect(entry,"activate",G_CALLBACK(enter_callback),entry);
+    gtk_table_attach_defaults(GTK_TABLE(table),entry,0,7,7,8);
+	completion = gtk_entry_completion_new();
+    gtk_entry_completion_set_text_column(completion,0);
+    gtk_entry_set_completion(GTK_ENTRY(entry),completion);
+    g_signal_connect(G_OBJECT(completion),"match-selected",G_CALLBACK(on_match_select),NULL);
+    for(i=0;i<size;i++)
+    {
+            gtk_list_store_append(listStore, &iter);
+            gtk_list_store_set(listStore,&iter, 0, name[i],-1);
+    }
+    gtk_entry_completion_set_model(completion,GTK_TREE_MODEL(listStore));
+    gtk_widget_show(entry);
+
+    entry = gtk_entry_new();
+    gtk_entry_set_max_length(GTK_ENTRY(entry),50);
+    g_signal_connect(entry,"activate",G_CALLBACK(enter_callback),entry);
+    gtk_table_attach_defaults(GTK_TABLE(table),entry,7,13,7,8);
+	completion = gtk_entry_completion_new();
+    gtk_entry_completion_set_text_column(completion,0);
+    gtk_entry_set_completion(GTK_ENTRY(entry),completion);
+    g_signal_connect(G_OBJECT(completion),"match-selected",G_CALLBACK(on_match_select),NULL);
+    for(i=0;i<size;i++)
+    {
+            gtk_list_store_append(listStore, &iter);
+            gtk_list_store_set(listStore,&iter, 0, name[i],-1);
+    }
+    gtk_entry_completion_set_model(completion,GTK_TREE_MODEL(listStore));
+    gtk_widget_show(entry);
+	
+	button = gtk_button_new_with_label ("Cancel Cab");
+    g_signal_connect (button, "clicked",G_CALLBACK (gtk_main_quit), NULL);
+	gtk_table_attach_defaults (GTK_TABLE (table), button, 0,7, 8, 10);
+    gtk_widget_show(button);
+
+    button = gtk_button_new_with_label ("Confirm Cab");
+    g_signal_connect (button, "clicked",G_CALLBACK (gtk_main_quit), NULL);
+    gtk_table_attach_defaults (GTK_TABLE (table), button, 7,13, 8, 10);
+    gtk_widget_show(button);
+    gtk_widget_show(table);
+
+	
+    gtk_widget_show(window);
+    gtk_main();
+    return 0;
+}  
+
+static gboolean
+on_expose_event(GtkWidget *widget,
+GdkEventExpose *event,
+gpointer data)
+{
+cairo_t *cr;
+
+cr = gdk_cairo_create(widget->window);
+/*global variable for inputs in the map*/
+int width=42;
+int height=26;
+
+/*make grid*/
+    int x,y;
+	for(y=0;y<width-1;y++){
+        cairo_move_to (cr,70,((y* 10)+70));
+        cairo_line_to (cr,470 ,((y* 10)+70));
+        cairo_set_line_width (cr, 2);
+        cairo_stroke (cr);
+                                                               
+    }
+	for(x=0;x<height;x++){
+        cairo_move_to (cr,((x*16)+70),70);
+        cairo_line_to (cr,((x*16)+70) ,470);
+        cairo_set_line_width (cr, 2);
+        cairo_stroke(cr);
+    }
+
+/*make text*/
+	cairo_set_source_rgb(cr, 0.1, 0.1, 0.1); 
+
+ 	cairo_select_font_face(cr, "Purisa",
+      	CAIRO_FONT_SLANT_NORMAL,
+      	CAIRO_FONT_WEIGHT_BOLD);
+	cairo_move_to(cr, 10, 20);
+  	cairo_show_text(cr, "New Irvine Map");
+
+    for (x=0;x<width-1;x++){
+        cairo_move_to(cr,10,(x*10)+72);
+        cairo_show_text(cr, "Street N");
+
+    }
+   /* float a;
+    a=1.57;
+    
+        cairo_move_to(cr,( (1*10)+70), 10);
+    
+        cairo_rotate(cr,a);
+   
+        cairo_show_text(cr, "Street N");*/
+    
+/*make a landcape*/
+    cairo_set_line_width (cr, 10);
+    cairo_set_source_rgba (cr, 0, 1, 0, 0.60);
+    cairo_rectangle (cr, 100, 100, 50, 50);
+    /*cairo_stroke (cr);*/
+    cairo_fill (cr);
+    
+cairo_destroy(cr);
+
+return FALSE;
+}
+
+
+int
+main (int argc, char *argv[])
+{
+
+GtkWidget *window;
+
+gtk_init(&argc, &argv);
+
+window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+
+g_signal_connect(window, "expose-event",
+G_CALLBACK (on_expose_event), NULL);
+g_signal_connect(window, "destroy",
+G_CALLBACK (gtk_main_quit), NULL);
+
+gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
+gtk_window_set_default_size(GTK_WINDOW(window), 500, 500); 
+gtk_widget_set_app_paintable(window, TRUE);
+
+gtk_widget_show_all(window);
+
+gtk_main();
+
+return 0;
+}

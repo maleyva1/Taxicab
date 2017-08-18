@@ -1,0 +1,85 @@
+/* Team 15 */
+
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <time.h>
+#include "Parser.h"
+#include "Conversion.h"
+
+char *ServResponse(char *buffer, int size,TRIPLIST *l,TAXILIST *taxlist,Map *m,int *trip_IDs) 
+{
+  char **ParsedBuf = malloc(sizeof(char) * 256);
+
+  TRIP *taxiTrip = NULL;
+  ROUTELIST *r = NULL;
+
+  int confirm, find_taxi;
+  time_t ctime = time(NULL);
+  struct tm *loctime;
+  char timebuf[80];
+
+  ParsedBuf = parseString(ParsedBuf,buffer);
+
+  MoveTaxi(l,ctime);
+
+  if(strcmp(ParsedBuf[0],"REQUEST_TAXI") == 0)
+  {
+      COORDINATE *pickup = toNumeric(ParsedBuf[1]);
+      COORDINATE *desting = toNumeric(ParsedBif[3]);
+       /*COORDINATE *pickup = newCoordinate(atoi(ParsedBuf[1]),atoi(ParsedBuf[2]));
+       COORDINATE *destin = newCoordinate(atoi(ParsedBuf[4]),atoi(ParsedBuf[5]));
+       */
+       TAXI *taxi = FindTaxi(taxlist,pickup,m);
+       r = FullRoute(taxi->location,pickup,destin,m);
+       taxiTrip = newTrip(pickup,destin,r);
+       taxiTrip->trip_ID = ++*(trip_IDs);
+       taxiTrip->taxicab = taxi;
+       newTripEntry(taxiTrip,l);
+       taxi->available_seats = 0;
+       ctime = time(NULL);
+       loctime = localtime(&ctime);
+       strftime(timebuf,80,"%I:%M%p",loctime);
+
+       sprintf(buffer,"OK TAXI%d PICKUP %d %d %s DROPOFF %d %d CONFIRM #%d",taxi->taxi_ID,pickup->x,pickup->y,timebuf,destin->x,destin->y,taxiTrip->trip_ID);
+      
+       free(ParsedBuf);
+       return buffer;
+  }
+  else if (strcmp(ParsedBuf[0],"CONFIRM") == 0) 
+  {
+       sscanf(ParsedBuf[1],"#%d",&confirm);
+       if((taxiTrip = searchConfirm(confirm,l)) != NULL){
+            sprintf(buffer,"OK TAXI%d POSITION %d %d",taxiTrip->taxicab->taxi_ID,taxiTrip->pickup->x,taxiTrip->pickup->y);
+            return buffer;
+        }
+       else{
+           sprintf(buffer,"CONFIRM #%d DNE",confirm);
+           return buffer;       
+        }
+  }
+  else if (strcmp(ParsedBuf[0],"REQUEST_POSITION") == 0) {
+       if(strcmp(ParsedBuf[1],"ALL") == 0) {
+           return buffer;
+        }
+       else {
+           sscanf(ParsedBuf[1],"Taxi%d",&find_taxi);
+           COORDINATE *tax = FindTaxiCoor(l,find_taxi);
+           if(tax == NULL){
+                sprintf(buffer,"Taxi%d DNE",find_taxi);
+                return buffer;
+           }
+           else {
+                sprintf(buffer,"Taxi%d POSITION %d %d",find_taxi,tax->x,tax->y);
+                return buffer;
+           }
+       }
+  }
+
+
+  else {
+      free(ParsedBuf);
+      return buffer;
+      
+    } 
+}

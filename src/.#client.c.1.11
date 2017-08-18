@@ -1,0 +1,212 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <gtk/gtk.h>
+/*#include <cairo.h>*/
+
+void convert_to_request(
+
+int main(int argc, char *argv[])
+{
+    /* GTK init */
+	gtk_init(&argc,&argv);
+
+    /* Networking stuff */
+	int xpick,ypick,xdest,ydest,sockfd, portno, n;
+    struct sockaddr_in serv_addr;
+    struct hostent *server;
+
+    /* GUI stuff */
+    GtkWidget *window;
+    GtkWidget *table;
+    GtkWidget *check;
+    GtkWidget *button;
+    GtkWidget *combo;
+    GtkWidget *fixed;
+    GList *glist = NULL;
+    char buffer[256];
+    int case1=0;
+    int w,h;
+
+	while(1)
+    {
+		printf("\nDomerRoamer alpha version\n");
+        printf("Enter 1 make a request for the server(request/confirm taxi)\n");
+		printf("Enter 2 for menu prototype\n");
+		printf("Enter 3 for map prototype\n");
+        printf("Enter 4 to exit\n");
+		scanf("%d",&case1);
+		switch(case1){
+            case 1:
+                if (argc < 3)
+                {
+                    printf("must enter: %s 'hostname' '#port' in the command line\n", argv[0]);
+                    return 0;
+                }
+
+                portno = atoi(argv[2]);
+
+                sockfd = socket(AF_INET, SOCK_STREAM, 0);
+                if (sockfd < 0)
+                {
+                    printf("ERROR opening socket");
+                    return 0;
+                }
+
+                server = gethostbyname(argv[1]);
+                if (server == NULL)
+                {
+                    printf("ERROR, no such host\n");
+                    return 0;
+                }
+
+                bzero((char *) &serv_addr, sizeof(serv_addr));
+
+                serv_addr.sin_family = AF_INET;
+                bcopy((char *)server->h_addr, (char *)&serv_addr.sin_addr.s_addr, server->h_length);
+                serv_addr.sin_port = htons(portno);
+
+                bzero(buffer,256);
+                printf("\nTo request a taxi, enter 1\nTo confirm a taxi request, enter 2\nTo request the location of a taxi, enter 3\nAll locations are currently represented by a x and y coordinate system\nAll taxi start from the location (10,10)\n");
+                scanf("%d",&case1);
+                switch(case1){
+                    case 1:
+                        printf("\nPlease enter the X value you would like to be picked up at:");
+                        scanf("%d",&xpick);
+                        printf("PLease enter the Y value you would like to be piecked up at:");
+                        scanf("%d",&ypick);
+                        printf("Please enter the X value of your final destination:");
+                        scanf("%d",&xdest);
+                        printf("Please enter the Y value of your final destination:");
+                        scanf("%d",&ydest);
+                        sprintf(buffer,"REQUEST_TAXI %d %d TO %d %d",xpick,ypick,xdest,ydest);
+                        printf("\nPLEASE CONFIRM YOUR TAXI REQUEST NEXT. YOUR CONFIRMATION NUMBER IS GIVEN IN THE NEXT LINE AT THE END\n");
+                        break;
+                    case 2:
+                        printf("\nPlease enter your confirmation number to confirm taxi request: ");
+                        scanf("%d",&case1);
+                        sprintf(buffer,"CONFIRM #%d",case1);
+                        break;
+                    case 3:
+                        printf("\nPlease enter the taxi number: ");
+                        scanf("%d",&case1);
+                        sprintf(buffer,"REQUEST_POSITION Taxi%d",case1);
+                        break;
+                }
+
+
+                if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0){ 
+                  printf("ERROR connecting");
+                  return 0;
+                }
+                n = write(sockfd,buffer,strlen(buffer));
+                if (n < 0){
+                printf("ERROR writing to socket");
+                return 0;
+                }
+                bzero(buffer,256);
+                n = read(sockfd,buffer,255);
+                if (n < 0){
+                printf("ERROR reading from socket");
+                return 0;
+                }
+                printf("%s\n",buffer);
+    
+                close(sockfd);
+		        break;
+
+			case 2:
+
+                                /*ghar client_input;*/
+                                glist = g_list_append (glist, "String 1");
+                                glist = g_list_append (glist, "String 2");
+                                glist = g_list_append (glist, "String 3");
+                                glist = g_list_append (glist, "String 4");
+                                window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+                                gtk_window_set_title(GTK_WINDOW(window),"Client Interface");
+                                table = gtk_table_new(5,1,TRUE);
+                                gtk_container_add(GTK_CONTAINER(window),table);
+                                g_signal_connect(window,"destroy",G_CALLBACK(gtk_main_quit),NULL);
+                                gtk_widget_set_size_request (GTK_WIDGET (window), 100, 500);
+                                check = gtk_check_button_new_with_label("Single");
+                                gtk_table_attach_defaults(GTK_TABLE(table),check,0,1,0,1);
+                                gtk_widget_show(check);
+                                check = gtk_check_button_new_with_label("Premium");
+                                gtk_table_attach_defaults(GTK_TABLE(table),check,0,1,1,2);
+                                gtk_widget_show(check);
+                                /*combo = gtk_combo_box_new();
+ *  *                              gtk_entry_set_text(GTK_ENTRY(GTK_COMBO(combo)->entry),"hello");
+ *   *                              gtk_combo_set_popdown_strings(GTK_COMBO(combo),glist);
+ *    *                              gtk_combo_set_use_arrows(GTK_COMBO(combo),0);
+ *     *                              g_signal_connect(GTK_COMBO(combo)->entry,"activate",NULL,NULL);
+ *      *                              gtk_table_attach_defaults(GTK_TABLE(table),combo,0,1,2,3);
+ *       *                              gtk_widget_show(combo);*/
+                                /*client_input = gtk_entry_get_text(GTK_ENTRY(GTK_COMBO(combo)->entry);*/
+                                button = gtk_button_new_with_label ("Cancel Cab");
+                                g_signal_connect (button, "clicked",G_CALLBACK (gtk_main_quit), NULL);
+                                gtk_table_attach_defaults (GTK_TABLE (table), button, 0,1, 3, 4);
+                                gtk_widget_show(button);
+                                button = gtk_button_new_with_label ("Confirm Cab");
+                                g_signal_connect (button, "clicked",G_CALLBACK (gtk_main_quit), NULL);
+                                gtk_table_attach_defaults (GTK_TABLE (table), button, 0,1, 4, 5);
+                                gtk_widget_show(button);
+                                gtk_widget_show(table);
+                                gtk_widget_show(window);
+                                gtk_main();
+
+				break;
+
+			case 3:
+                 
+                    printf("\nthis will create a png of the gird that will represent the streets hello.png\n");
+                    /*scanf("%d",&w);
+                    printf("\nenter number of streets in the y axis\n");
+                    scanf("%d",&h);*/
+			int x,y;
+            cairo_surface_t *surface =
+                            cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 800, 800);
+                    cairo_t *cr =
+                                    cairo_create (surface);
+                    /*cairo_set_source_rgb (cr, 255, 255, 255);
+                    cairo_paint (cr);*/
+
+                                                                                      
+                                                              for(y=0;y<26;y++){
+                                                            cairo_move_to (cr,10,y* 25);
+                                                            cairo_line_to (cr,600 ,y* 25);
+                                                            cairo_set_line_width (cr, 15);
+                                                            cairo_stroke (cr);
+                                                               
+                                                            }
+							for(x=0;x<26;x++){
+							cairo_move_to (cr,x*25,10);
+                                                            cairo_line_to (cr,x*25 ,600);
+                                                            cairo_set_line_width (cr, 15);
+                                                            cairo_stroke (cr);
+
+							
+}
+                                                                    cairo_destroy (cr);
+                                                                            cairo_surface_write_to_png (surface, "hello.png");
+                                                                                    cairo_surface_destroy (surface);
+                                                             
+    		    /*window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+                    gtk_widget_set_size_request(window, 20*w, 20*h) ;
+    		    gtk_window_set_title(GTK_WINDOW(window), "DomerRomer") ;
+                     
+    				gtk_main ();*/
+    
+    				return 0;
+
+				break;
+            case 4:
+                return 0;
+		}
+	}
+    return 0;
+}
